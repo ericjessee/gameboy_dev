@@ -1,18 +1,21 @@
+;motion of sprite is updated on every timer overflow interrupt. 
+;speed determines how many pixels we can move for each interrupt. 
+
 INCLUDE "hardware.inc"
 
 SECTION "Tiles", ROM0
 Tiles:
-    INCBIN "mush_big.tiles"
+    INCBIN "graphics/mush_big.tiles"
 TilesEnd:
 
 SECTION "Tile Map", ROM0
 Tilemap:
-    INCBIN "map"
+    INCBIN "graphics/map"
 TilemapEnd:
 
 SECTION "Sprites", ROM0
 Sprite:
-	INCBIN "sprite2.tiles"
+	INCBIN "graphics/sprite2.tiles"
 endSprite:
 
 DEF buttons EQU $C000
@@ -258,12 +261,12 @@ Handle:
 	ld [buttons_prev], a
 	ret
 
-goRight: ;set speed to 1
-	ld a, 128
+goRight: ;set speed to 2
+	ld a, 129
 	ld [sprite_speed_x], a
 	ret
 goLeft: ;set speed to -1
-	ld a, 126
+	ld a, 125
 	ld [sprite_speed_x], a
 	ret
 stopMovingX:
@@ -292,25 +295,24 @@ updateObjPos:
 	ret
 
 updateSpritePos:
-	ld a, [div_flag] ;only move every second call. This halves the minimum speed
-	jp z, updatePos ;doesn't work rightn now
-	ld a, 1
-	ld [div_flag], a
-	ret
-updatePos: 
+checkX:
 	ld a, [sprite_speed_x] ;can be +126 or -126, with 127 being 0
 	cp 127
-	call z, dontMove
+	jp nz, moveX
+	jp checkY
+moveX:
 	call nc, moveRight
 	call c, moveLeft
+checkY:
 	ld a, [sprite_speed_y]
 	cp 127
-	call z, dontMove
-	call nc, moveDown
-	call c, moveUp
-dontMove:
+	jp nz, moveY
 	ld a, 0
 	ld [div_flag], a
+	ret
+moveY:
+	call nc, moveDown
+	call c, moveUp
 	ret
 moveRight:
 	sub 127
